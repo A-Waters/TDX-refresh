@@ -1,4 +1,7 @@
 let running = false;
+// TO DO: create interface 
+// TO DO: create closing tab to turn off running
+// TO DO: make sure user navigates the the right page before injection
 
 // 1000 milliseconds = 1 second
 
@@ -25,7 +28,7 @@ function ai_51frame() {
       // wait for page to load for 2 seconds
       setTimeout(inject, 2000)  
 
-    }, 180000); // how often should refresh (3 min)
+    }, 180000 ); // how often should refresh (3 min) 180000
   }
 
   // check for movement
@@ -35,7 +38,7 @@ function ai_51frame() {
     clearInterval(reload_timer)
     // reset idle timer
     clearTimeout(time);
-    time = setTimeout(refresh, 60000) // how long till idle (currently 1 min)
+    time = setTimeout(refresh, 60000) // how long till idle (currently 1 min) 60000
   }
 
 
