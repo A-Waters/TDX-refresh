@@ -1,43 +1,49 @@
-let color = '#3aa757';
+let running = false;
 
-function postback() {
-  
-  // https://stackoverflow.com/a/10126042
-  var inactivityTime = function () {
-    console.log("starting timer")
-    
-    var time;
-    
-    window.onload = resetTimer;    
-    // DOM Events
-    // document.onmousemove = resetTimer;
-    document.onmousemove = resetTimer;
-    document.onkeydown = resetTimer;
-    
-    var reload_timer;
+// 1000 milliseconds = 1 second
 
-    function idle() {
-        console.log("You are now idle ")
-        reload_timer = window.setInterval(function(){
-          console.log("Refreshing")
-          RightFrame.location.href = RightFrame.location.href;
-        }, 5000); // how many mill secs till refresh
+function ai_51frame() {
+  // RightFrame.location.href = RightFrame.location.href;
+  console.log("adding a refresh")
+  var reload_timer;
+
+  // inject into new iframe
+  function inject() {
+    document.getElementById('RightFrame').contentWindow.document.onmousemove = () => {
+      //gives me location in terms of the iframe but not the entire page.
+      window.resetTimer(); 
     }
+  }
 
-    function resetTimer() {
-        clearTimeout(time);
-        console.log("You are now no longer idle ")
-        time = setTimeout(idle, 10000) // how many mill secs till start idleing
-        clearInterval(reload_timer);
-    }
-  };
+  // refresh the window
+  window.refresh = function refresh() 
+  {
+    reload_timer = setInterval(function(){
+      RightFrame.location.href = RightFrame.location.href;
+      setTimeout(inject, 2000)  // wait for page to load for 2 seconds
+    }, 5000); // how often should refresh
+  }
 
-  resetTimer();
-  inactivityTime();
+  // check for movement
+  window.resetTimer = function resetTimer() 
+  {
+    clearInterval(reload_timer)
+    clearTimeout(time);
+    time = setTimeout(refresh, 60000) // how long till idle (currently 1 min)
 
+  }
 
+  var time;
+
+  document.onmousemove = resetTimer;
+  document.onkeydown = resetTimer;
 }
 
+function rightframe() {
+  console.log("adding a refresh pt2")
+  document.onmousemove = parent.document.resetTimer;
+  document.onkeydown = parent.document.resetTimer;
+}
 
 chrome.runtime.onInstalled.addListener(() => {
   chrome.storage.sync.set({ color });
@@ -45,29 +51,28 @@ chrome.runtime.onInstalled.addListener(() => {
 });
 
 chrome.tabs.onUpdated.addListener( function (tabId_main, changeInfo, tab) {
-  if (changeInfo.status == 'complete') {
+  if (changeInfo.status == 'complete' && running == false) {
     
     chrome.tabs.query({active: true, currentWindow: true}, function(tabs) {
       var tabURL = tabs[0].url;
       var tabId = tabs[0].id
-      console.log(tabId);
 
       if (tabURL == "https://support.gmhec.org/TDNext/Home/Desktop/Default.aspx"){
         setTimeout(() => {
-
-          let IFR_URL = 'https://support.gmhec.org/TDNext/Apps/51/Tickets/Default.aspx'
+          
+          let AI_51_URL = "https://support.gmhec.org/TDNext/Apps/51/Tickets/Default.aspx"
           chrome.webNavigation.getAllFrames({tabId},(vals) => {
-            
-            console.log(vals)
-            var frame = vals.find((e) => e.url == IFR_URL && e.parentFrameId == 0) 
-            console.log("FRAME: ", frame)
-            
+                               
+            var ai_51_frame = vals.find((e) => e.url == AI_51_URL && e.parentFrameId == 0) 
+                     
             chrome.scripting.executeScript(
-              {
-                target: {tabId: tabId, frameIds: [frame.frameId]},
-                func: postback,
-              });
-
+            {
+              target: {tabId: tabId, frameIds: [ai_51_frame.frameId]},
+              func: ai_51frame,
+            });
+            
+          
+            running = true
           });
 
           }, 10000); // time to navigate to correct page
